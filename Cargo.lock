@@ -964,15 +964,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ef8e4b7e61dfe7719bb03c884dc270cd46a82efb40f93e9933b990c5c190c59"
 
 [[package]]
-name = "bevy_new_minimal"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "log",
- "tracing",
-]
-
-[[package]]
 name = "bevy_pbr"
 version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1228,6 +1219,15 @@ dependencies = [
  "thiserror 2.0.17",
  "tracing",
  "wgpu-types",
+]
+
+[[package]]
+name = "bevy_shader_runner"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "log",
+ "tracing",
 ]
 
 [[package]]
