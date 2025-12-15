@@ -7,5 +7,5 @@ layout(set = 2, binding = 0) uniform float time;
 
 
 void main() {
-    o_Target = vec4(v_Uv, abs(sin(time)), 1.0);
+    o_Target = vec4(v_Uv*4.0, abs(sin(time)), 1.0);
 }

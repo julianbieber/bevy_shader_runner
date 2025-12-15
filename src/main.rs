@@ -30,7 +30,8 @@ struct ShaderViewerPlugin {}
 
 impl Plugin for ShaderViewerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_camera);
+        app.add_systems(Startup, setup_camera)
+            .add_systems(Update, update_time);
     }
 }
 
@@ -39,14 +40,24 @@ fn setup_camera(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CustomMaterial>>,
 ) {
-    commands.spawn(Camera2d {
-        ..Default::default()
-    });
+    commands.spawn(Camera2d {});
     commands.spawn((
-        Mesh2d(meshes.add(Cuboid::default())),
+        Mesh2d(meshes.add(Rectangle::default())),
         MeshMaterial2d(materials.add(CustomMaterial { time: 0.0 })),
         Transform::from_xyz(0.0, 0.5, 0.0),
     ));
+}
+
+fn update_time(
+    mut materials: ResMut<Assets<CustomMaterial>>,
+    handles: Query<&MeshMaterial2d<CustomMaterial>>,
+    time: Res<Time>,
+) {
+    for handle in handles {
+        if let Some(m) = materials.get_mut(handle.id()) {
+            m.time = time.elapsed_secs();
+        }
+    }
 }
 
 #[derive(Asset, TypePath, AsBindGroup, Clone)]
@@ -57,7 +68,11 @@ struct CustomMaterial {
 
 impl Material2d for CustomMaterial {
     fn vertex_shader() -> bevy::shader::ShaderRef {
-        "shaders/default.vert".into()
+        if FRAGMENT.get().unwrap().ends_with(".frag") {
+            "shaders/default.vert".into()
+        } else {
+            "shaders/default.wgsl".into()
+        }
     }
 
     fn fragment_shader() -> bevy::shader::ShaderRef {
