@@ -39,11 +39,15 @@ fn setup_camera(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CustomMaterial>>,
+    window: Single<&Window>,
 ) {
     commands.spawn(Camera2d {});
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::default())),
-        MeshMaterial2d(materials.add(CustomMaterial { time: 0.0 })),
+        MeshMaterial2d(materials.add(CustomMaterial {
+            time: 0.0,
+            resolution: window.size(),
+        })),
         Transform::from_xyz(0.0, 0.5, 0.0),
     ));
 }
@@ -52,10 +56,12 @@ fn update_time(
     mut materials: ResMut<Assets<CustomMaterial>>,
     handles: Query<&MeshMaterial2d<CustomMaterial>>,
     time: Res<Time>,
+    window: Single<&Window>,
 ) {
     for handle in handles {
         if let Some(m) = materials.get_mut(handle.id()) {
             m.time = time.elapsed_secs();
+            m.resolution = window.size()
         }
     }
 }
@@ -64,6 +70,8 @@ fn update_time(
 struct CustomMaterial {
     #[uniform(0)]
     time: f32,
+    #[uniform(1)]
+    resolution: Vec2,
 }
 
 impl Material2d for CustomMaterial {

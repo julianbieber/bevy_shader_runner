@@ -78,6 +78,12 @@ run:
 	RUSTDOCFLAGS="{{RUSTDOCFLAGS_BASE}}" \
 	bevy run -- --shader shaders/example.frag
 
+run-wgsl:
+	@env \
+	RUSTFLAGS="{{RUSTFLAGS_BASE}}" \
+	RUSTDOCFLAGS="{{RUSTDOCFLAGS_BASE}}" \
+	bevy run -- --shader shaders/example.wgsl
+
 # Run web via Bevy CLI
 # Bevy CLI handles building to wasm32-unknown-unknown and serving locally.
 run-web:

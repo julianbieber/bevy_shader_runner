@@ -1,11 +1,12 @@
 #version 450
-layout(location = 0) in vec2 v_Uv;
+layout(location = 0) in vec2 uv;
 
-layout(location = 0) out vec4 o_Target;
+layout(location = 0) out vec4 fragColor;
 
-layout(set = 2, binding = 0) uniform float time;
+layout(set = 2, binding = 0) uniform float iTime;
+layout(set = 2, binding = 1) uniform vec2 iResolution;
 
 
 void main() {
-    o_Target = vec4(v_Uv*4.0, abs(sin(time)), 1.0);
+    fragColor = vec4(uv*4.0, abs(sin(iTime)), 1.0);
 }
