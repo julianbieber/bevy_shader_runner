@@ -4,6 +4,7 @@ use bevy::{
     prelude::*,
     render::render_resource::AsBindGroup,
     sprite_render::{Material2d, Material2dPlugin},
+    window::WindowResized,
 };
 use clap::Parser;
 
@@ -31,7 +32,7 @@ struct ShaderViewerPlugin {}
 impl Plugin for ShaderViewerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_camera)
-            .add_systems(Update, update_time);
+            .add_systems(Update, (update_time, react_to_resize));
     }
 }
 
@@ -43,12 +44,11 @@ fn setup_camera(
 ) {
     commands.spawn(Camera2d {});
     commands.spawn((
-        Mesh2d(meshes.add(Rectangle::default())),
+        Mesh2d(meshes.add(Rectangle::new(window.width(), window.height()))),
         MeshMaterial2d(materials.add(CustomMaterial {
             time: 0.0,
             resolution: window.size(),
         })),
-        Transform::from_xyz(0.0, 0.5, 0.0),
     ));
 }
 
@@ -63,6 +63,17 @@ fn update_time(
             m.time = time.elapsed_secs();
             m.resolution = window.size()
         }
+    }
+}
+
+fn react_to_resize(
+    mut resized: MessageReader<WindowResized>,
+    window: Single<&Window>,
+    mut rect: Single<&mut Mesh2d>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    if resized.read().next().is_some() {
+        rect.0 = meshes.add(Rectangle::new(window.width(), window.height()));
     }
 }
 
@@ -85,5 +96,14 @@ impl Material2d for CustomMaterial {
 
     fn fragment_shader() -> bevy::shader::ShaderRef {
         FRAGMENT.get().unwrap().as_str().into()
+    }
+
+    fn specialize(
+        _descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
+        layout: &bevy::mesh::MeshVertexBufferLayoutRef,
+        _key: bevy::sprite_render::Material2dKey<Self>,
+    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        dbg!(layout);
+        Ok(())
     }
 }
