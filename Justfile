@@ -72,17 +72,20 @@ clean:
 	@cargo clean
 
 # Run native via Bevy CLI
-run:
+run name:
 	@env \
 	RUSTFLAGS="{{RUSTFLAGS_BASE}}" \
 	RUSTDOCFLAGS="{{RUSTDOCFLAGS_BASE}}" \
-	bevy run -- --shader shaders/example.frag
+	bevy run -- --shader shaders/{{name}}.frag
 
-run-wgsl:
-	@env \
-	RUSTFLAGS="{{RUSTFLAGS_BASE}}" \
-	RUSTDOCFLAGS="{{RUSTDOCFLAGS_BASE}}" \
-	bevy run -- --shader shaders/example.wgsl
+# Create a new glsl shader from the example template
+new-shader name:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    src="./assets/shaders/example.frag"
+    dst="./assets/shaders/{{name}}.frag"
+    test -e "$dst" || cp "$src" "$dst"
+
 
 # Run web via Bevy CLI
 # Bevy CLI handles building to wasm32-unknown-unknown and serving locally.
