@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = {version = "0.17", features = ["shader_format_glsl", "file_watcher"]}
+bevy = {version = "0.17", features = ["shader_format_glsl", "file_watcher", "experimental_bevy_ui_widgets"]}
 clap = { version = "4.5.53", features = ["derive"] }
 # Set max log levels. This helps avoid unwanted low-severity log spam, which can affect performance.
 log = { version = "0.4", features = [
