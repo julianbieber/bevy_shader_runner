@@ -65,3 +65,63 @@ When working with this project through Mistral Vibe:
    - Profile shader execution
    - Optimize uniform updates
    - Minimize texture bindings when possible
+
+## Learnings from Shadertoy Integration
+
+### Bevy Change Detection
+
+The implementation of automatic shader dumping when sliders change provided valuable insights into Bevy's change detection system:
+
+- **Resource Tracking**: Bevy's `is_changed()` method on resources is powerful for detecting state changes
+- **System Integration**: Adding systems that respond to changes is straightforward with Bevy's ECS architecture
+- **Debouncing**: Implementing debounce logic prevents excessive triggers during rapid UI interactions
+
+### Shader Conversion Challenges
+
+Converting Bevy GLSL shaders to Shadertoy format revealed several important considerations:
+
+- **Uniform Handling**: Bevy uses specific layout bindings that need to be removed for Shadertoy compatibility
+- **Function Preservation**: Helper functions must be carefully extracted and preserved during conversion
+- **Main Function Transformation**: The conversion from `main()` to `mainImage()` requires proper UV coordinate setup
+
+### Testing Strategy
+
+Developing comprehensive unit tests for the shader conversion provided insights into effective testing approaches:
+
+- **Input/Output Testing**: Verify that specific input patterns produce expected output structures
+- **Edge Case Coverage**: Test complex shader structures with nested functions and multiple uniforms
+- **Regression Prevention**: Tests serve as documentation and prevent future breaking changes
+
+### CLI Design Patterns
+
+Enhancing the CLI with the `--dump-shadertoy` argument demonstrated effective patterns:
+
+- **Help Documentation**: Clear, descriptive help text improves user experience
+- **Flexible Output**: Supporting both file output and stdout provides versatility
+- **Progressive Enhancement**: Starting with basic functionality and adding features incrementally
+
+### File System Integration
+
+Working with shader assets and configuration files highlighted important patterns:
+
+- **Path Handling**: Proper path manipulation is crucial for cross-platform compatibility
+- **Config Management**: Separating runtime config from persistent storage prevents conflicts
+- **Asset Loading**: Bevy's asset system requires specific path formats for proper loading
+
+### Performance Considerations
+
+Implementing real-time features revealed performance optimization opportunities:
+
+- **Change Detection**: Only process changes when they actually occur, not on every frame
+- **Debounce Timing**: Balancing responsiveness with performance through appropriate debounce delays
+- **Resource Management**: Efficient resource usage prevents memory leaks in long-running applications
+
+## Future Enhancement Opportunities
+
+Based on this implementation, several areas for future improvement were identified:
+
+1. **Shader Hot Reloading**: Extend change detection to monitor file system changes for live shader editing
+2. **Advanced Conversion**: Support more complex shader patterns and GLSL features
+3. **Export Formats**: Add support for additional shader platforms beyond Shadertoy
+4. **UI Feedback**: Provide visual indicators when automatic exports occur
+5. **Error Recovery**: Enhance error handling for malformed shaders and invalid configurations
