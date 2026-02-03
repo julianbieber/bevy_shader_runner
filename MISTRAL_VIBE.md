@@ -125,3 +125,68 @@ Based on this implementation, several areas for future improvement were identifi
 3. **Export Formats**: Add support for additional shader platforms beyond Shadertoy
 4. **UI Feedback**: Provide visual indicators when automatic exports occur
 5. **Error Recovery**: Enhance error handling for malformed shaders and invalid configurations
+
+## Justfile Integration
+
+The project includes a comprehensive Justfile that provides valuable build and development automation:
+
+### Key Justfile Commands
+
+1. **Quality Assurance**
+   - `just fmt`: Format check with strict Rust formatting rules
+   - `just clippy`: Run Clippy lints with comprehensive checks
+   - `just docs`: Documentation check with private item documentation
+   - `just bevy-lints`: Bevy-specific linting for best practices
+
+2. **Testing & Validation**
+   - `just test`: Run all tests with locked dependencies
+   - `just check-web`: Web compilation check with WASM target
+   - `just all`: Run complete CI pipeline (fmt, docs, clippy, lints, tests)
+
+3. **Development Workflow**
+   - `just run <name>`: Run native shader with Bevy CLI
+   - `just run-web`: Run web version with WASM compilation
+   - `just new-shader <name>`: Create new shader from template
+
+4. **Configuration**
+   - Uses strict Rust flags: `-Dwarnings -Zshare-generics=y -Zthreads=0`
+   - Supports WASM compilation with `wasm32-unknown-unknown` target
+   - Includes getrandom WASM configuration for web builds
+
+### Justfile Best Practices
+
+1. **Strict Mode**: Uses `set shell := ["bash", "-eu", "-o", "pipefail", "-c"]` for robust error handling
+2. **Environment Isolation**: Sets `RUSTFLAGS` and `RUSTDOCFLAGS` consistently across all commands
+3. **CI Integration**: The `all` target runs commands in CI order for consistent validation
+4. **Template System**: Provides shader templates for rapid development
+5. **Cross-Platform**: Supports both native and web compilation targets
+
+### Integration with Current Implementation
+
+The existing Shadertoy dump functionality could be enhanced by integrating with the Justfile:
+
+1. **Add Shadertoy Test Target**: Create a `just test-shadertoy` command to validate conversion
+2. **Automated Export**: Add `just export-shadertoy` for batch processing multiple shaders
+3. **CI Integration**: Include Shadertoy validation in the `all` target for comprehensive testing
+4. **Web Export**: Extend web compilation to include Shadertoy-compatible exports
+
+### Example Justfile Enhancement
+
+```justfile
+# Test Shadertoy conversion
+test-shadertoy:
+    @cargo test --test shadertoy_tests
+
+# Export all shaders to Shadertoy format
+export-shadertoy:
+    @for shader in assets/shaders/*.frag; do \
+        cargo run -- --shader "$$shader" --dump-shadertoy "exports/$(basename "$$shader" .frag)-shadertoy.glsl"; \
+    done
+
+# Validate all Shadertoy exports
+validate-shadertoy:
+    @cargo test --test shadertoy_tests && \
+     echo "Shadertoy conversion validated successfully"
+```
+
+This integration would provide a more robust development workflow and better CI/CD integration for the Shadertoy functionality.
