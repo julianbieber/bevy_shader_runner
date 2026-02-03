@@ -35,7 +35,25 @@ float dotnois(vec3 x) {
     return a;
 }
 
-vec3 flame(vec3 p) {
+float mapFire(vec3 p) {
+    return length(p*p.y) - 6.0;
+}
+
+vec3 flame(vec3 ro, vec3 rd) {
+    float t = 0.0;
+    vec3 p = vec3(0.0);
+
+    for (int i = 0; i < 100; ++i) {
+        p = ro + rd * t;
+
+        float d = mapFire(p);
+
+        t += d;
+        if (d < 0.001) {
+            return color(slider1.xyz, vec3(0.01, 0.02, 0.1), vec3(0.01, 0.01, 0.2), vec3(iTime), dotnois(p+iTime));
+        }
+    }
+
     return color(slider1.xyz, vec3(0.01, 0.02, 0.1), vec3(0.01, 0.01, 0.2), vec3(iTime), dotnois(p+iTime));
 }
 
@@ -55,12 +73,12 @@ vec3 march(vec3 ro, vec3 rd) {
 
         t += d;
         if (d < 0.001) {
-            return flame(p);
+            return flame(p, rd);
         }
         min_d = min(min_d, d);
     }
 
-    return flame(vec3(min_d));
+    return vec3(0.0);
 }
 
 void main() {
