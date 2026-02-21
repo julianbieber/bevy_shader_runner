@@ -4,13 +4,11 @@ use std::{
 };
 
 use bevy::{
+    feathers::{FeathersPlugin, dark_theme::create_dark_theme, theme::UiTheme},
     input_focus::tab_navigation::TabIndex,
     picking::hover::Hovered,
     prelude::*,
-    ui_widgets::{
-        Slider, SliderRange, SliderValue, UiWidgetsPlugins,
-        ValueChange, observe,
-    },
+    ui_widgets::{Slider, SliderRange, SliderValue, UiWidgetsPlugins, ValueChange, observe},
 };
 use serde::{Deserialize, Serialize};
 
@@ -54,10 +52,12 @@ pub fn read_slider_state_for_dump(shader_path: &Path) -> Option<SliderState> {
             .to_string_lossy()
             .replace(extension.to_string_lossy().as_ref(), "")
     };
-    
+
     // For dump functionality, we want to look in assets/configs directly
-    let config_path = PathBuf::from("assets").join("configs").join(format!("{}{}", shader_name, "json"));
-    
+    let config_path = PathBuf::from("assets")
+        .join("configs")
+        .join(format!("{}{}", shader_name, "json"));
+
     let json_confg = read_to_string(config_path).ok()?;
     let config: SliderState = serde_json::from_str(&json_confg).unwrap();
 
@@ -84,7 +84,11 @@ fn extract_config_path(shader_path: &Path) -> Option<PathBuf> {
     };
     let base_dir = shader_path.parent()?.parent()?;
     let assets = PathBuf::from("assets");
-    let config_path = assets.join(base_dir.join("configs").join(format!("{}{}", shader_name, "json")));
+    let config_path = assets.join(
+        base_dir
+            .join("configs")
+            .join(format!("{}{}", shader_name, "json")),
+    );
     Some(config_path)
 }
 
@@ -106,7 +110,8 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(UiWidgetsPlugins);
+        app.add_plugins(FeathersPlugin);
+        app.insert_resource(UiTheme(create_dark_theme()));
 
         app.add_systems(Startup, setup_ui)
             .add_systems(Update, show_hide_ui);
@@ -196,10 +201,6 @@ fn on_update_slider(
         write_slider_state(&shader_path.0, &slider_state);
     }
 }
-
-
-
-
 
 fn create_slider_block(start: u32, values: Vec4) -> impl Bundle {
     (

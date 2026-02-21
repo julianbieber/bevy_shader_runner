@@ -36,7 +36,7 @@ float dotnois(vec3 x) {
 }
 
 float mapFire(vec3 p) {
-    return length(p*p.y) - 6.0;
+    return length(p-p.z) - 6.0;
 }
 
 vec3 flame(vec3 ro, vec3 rd) {
