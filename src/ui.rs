@@ -8,7 +8,8 @@ use bevy::{
     picking::hover::Hovered,
     prelude::*,
     ui_widgets::{
-        Slider, SliderRange, SliderThumb, SliderValue, UiWidgetsPlugins, ValueChange, observe,
+        CoreSliderDragState, Slider, SliderRange, SliderThumb, SliderValue, UiWidgetsPlugins,
+        ValueChange, observe,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -114,7 +115,7 @@ impl Plugin for UiPlugin {
         app.add_plugins(UiWidgetsPlugins);
 
         app.add_systems(Startup, setup_ui)
-            .add_systems(Update, show_hide_ui);
+            .add_systems(Update, (update_slider_style, show_hide_ui));
     }
 }
 
@@ -232,6 +233,31 @@ fn create_slider_block(start: u32, values: Vec4) -> impl Bundle {
         ],
     )
 }
+fn update_slider_style(
+    sliders: Query<
+        (Entity, &SliderValue, &SliderRange),
+        (
+            Or<(
+                Changed<SliderValue>,
+                Changed<SliderRange>,
+                Changed<Hovered>,
+                Changed<CoreSliderDragState>,
+            )>,
+        ),
+    >,
+    children: Query<&Children>,
+    mut thumbs: Query<&mut Node, With<SliderThumb>>,
+) {
+    for (slider_ent, value, range) in sliders.iter() {
+        for child in children.iter_descendants(slider_ent) {
+            if let Ok(mut thumb_node) = thumbs.get_mut(child) {
+                thumb_node.left = percent(range.thumb_position(value.0 * 100.0));
+            }
+        }
+    }
+}
+const SLIDER_TRACK: Color = Color::srgb(0.05, 0.05, 0.05);
+const SLIDER_THUMB: Color = Color::srgb(0.35, 0.75, 0.35);
 
 fn create_slider(index: u32, initial: f32) -> impl Bundle {
     (
@@ -243,6 +269,7 @@ fn create_slider(index: u32, initial: f32) -> impl Bundle {
             justify_items: JustifyItems::Center,
             column_gap: px(4),
             height: px(12),
+            // width: px(300),
             ..default()
         },
         TabIndex(index as i32),
@@ -253,5 +280,45 @@ fn create_slider(index: u32, initial: f32) -> impl Bundle {
             track_click: bevy::ui_widgets::TrackClick::Snap,
         },
         Hovered::default(),
+        Children::spawn((
+            // Slider background rail
+            Spawn((
+                Node {
+                    height: px(6),
+                    border_radius: BorderRadius::all(px(3)),
+                    ..default()
+                },
+                BackgroundColor(SLIDER_TRACK), // Border color for the slider
+            )),
+            // Invisible track to allow absolute placement of thumb entity. This is narrower than
+            // the actual slider, which allows us to position the thumb entity using simple
+            // percentages, without having to measure the actual width of the slider thumb.
+            Spawn((
+                Node {
+                    display: Display::Flex,
+                    position_type: PositionType::Absolute,
+                    left: px(0),
+                    // Track is short by 12px to accommodate the thumb.
+                    right: px(12),
+                    top: px(0),
+                    bottom: px(0),
+                    ..default()
+                },
+                children![(
+                    // Thumb
+                    SliderThumb,
+                    Node {
+                        display: Display::Flex,
+                        width: px(12),
+                        height: px(12),
+                        position_type: PositionType::Absolute,
+                        left: percent((100.0 * initial) as i32), // This will be updated by the slider's value
+                        border_radius: BorderRadius::MAX,
+                        ..default()
+                    },
+                    BackgroundColor(SLIDER_THUMB),
+                )],
+            )),
+        )),
     )
 }
