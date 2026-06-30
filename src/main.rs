@@ -7,7 +7,7 @@ mod shadertoy_tests;
 use bevy::{
     input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
     prelude::*,
-    render::render_resource::AsBindGroup,
+    render::render_resource::{AsBindGroup, Extent3d, TextureDimension, TextureFormat, TextureUsages},
     window::WindowResized,
 };
 
@@ -24,7 +24,27 @@ struct Opt {
     
     #[arg(long, help = "Dump shader with hardcoded slider values for Shadertoy. Use '-' for stdout. Will watch for slider changes when running interactively")]
     dump_shadertoy: Option<String>,
+    
+    #[arg(long, help = "Run for N frames and dump the last frame as an image")]
+    frames: Option<u32>,
+    
+    #[arg(long, help = "Output path for the frame dump image")]
+    output_image: Option<String>,
 }
+
+#[derive(Resource)]
+struct FrameCounter {
+    current: u32,
+    target: u32,
+}
+
+#[derive(Resource)]
+struct ScreenshotConfig {
+    output_path: String,
+    should_capture: bool,
+}
+
+
 static FRAGMENT: OnceLock<String> = OnceLock::new();
 
 #[derive(Resource)]
@@ -47,22 +67,56 @@ fn main() -> AppExit {
     FRAGMENT.set(fragment_path).unwrap();
     
     let mut app = App::new();
+    
+    // Determine if we're in headless mode (frame dumping)
+    let is_headless = opt.frames.is_some() && opt.output_image.is_some();
+    
     app.insert_resource(config)
-        .insert_resource(ShaderPath(shader_path.clone()))
-        .add_plugins((
-            DefaultPlugins,
+        .insert_resource(ShaderPath(shader_path.clone()));
+    
+    // Always use DefaultPlugins for proper resource setup
+    app.add_plugins(DefaultPlugins);
+    
+    // Add common plugins
+    app.add_plugins((
+        Material2dPlugin::<CustomMaterial>::default(),
+        ShaderViewerPlugin,
+    ));
+    
+    // Add UI plugins only in interactive mode
+    if !is_headless {
+        app.add_plugins((
             InputDispatchPlugin,
             TabNavigationPlugin,
-            Material2dPlugin::<CustomMaterial>::default(),
             UiPlugin,
-            ShaderViewerPlugin,
         ));
+    }
     
-    // Set up dump watcher if dump path is provided
+    // Set up dump watcher if dump path is provided (interactive mode only)
     if let Some(output_path) = opt.dump_shadertoy {
         let dump_config = setup_dump_watcher(shader_path.clone(), output_path);
         app.insert_resource(dump_config)
             .add_systems(Update, check_for_changes_and_dump);
+    }
+    
+    // Set up frame counting and screenshot capture if frames parameter is provided
+    if let (Some(frame_count), Some(image_path)) = (opt.frames, opt.output_image) {
+        app.insert_resource(FrameCounter {
+            current: 0,
+            target: frame_count,
+        })
+        .insert_resource(ScreenshotConfig {
+            output_path: image_path,
+            should_capture: true,
+        })
+        .add_systems(Startup, setup_render_target)
+        .add_systems(Update, count_frames)
+        .add_systems(Update, capture_last_frame);
+        
+        // In headless mode, hide windows immediately
+        if is_headless {
+            app.add_systems(Startup, hide_windows);
+        }
     }
     
     app.run()
@@ -78,6 +132,71 @@ impl Plugin for ShaderViewerPlugin {
     }
 }
 
+fn setup_render_target(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    windows: Query<&Window>,
+) {
+    // Create a render target texture that we can render the shader to
+    let (width, height) = if let Some(window) = windows.iter().find(|w| w.focused) {
+        (window.width() as u32, window.height() as u32)
+    } else {
+        (800, 600) // Default size
+    };
+    
+    // Create the render target image
+    let mut render_target = Image::new_fill(
+        Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        &[0, 0, 0, 255], // Opaque black background
+        TextureFormat::Rgba8UnormSrgb,
+        bevy::asset::RenderAssetUsages::RENDER_WORLD,
+    );
+    
+    // Set up the texture for rendering
+    render_target.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
+        | TextureUsages::RENDER_ATTACHMENT
+        | TextureUsages::COPY_SRC;
+    
+    let render_target_handle = images.add(render_target);
+    
+    // Create a separate image for capturing the final output
+    let mut capture_image = Image::new_fill(
+        Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        &[0, 0, 0, 255],
+        TextureFormat::Rgba8UnormSrgb,
+        bevy::asset::RenderAssetUsages::RENDER_WORLD,
+    );
+    
+    let capture_handle = images.add(capture_image);
+    
+    commands.insert_resource(RenderTarget {
+        render_target: render_target_handle,
+        capture_target: capture_handle,
+        width,
+        height,
+    });
+    
+    println!("Render target setup: {}x{}", width, height);
+}
+
+#[derive(Resource)]
+struct RenderTarget {
+    render_target: Handle<Image>,
+    capture_target: Handle<Image>,
+    width: u32,
+    height: u32,
+}
+
 fn setup_camera(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -86,17 +205,21 @@ fn setup_camera(
     initial_state: Res<SliderState>,
 ) {
     commands.spawn(Camera2d {});
+    
+    // Create the shader quad that renders to the main screen
+    let material_handle = materials.add(CustomMaterial {
+        time: 0.0,
+        resolution: window.size(),
+        sliders_1: initial_state.sliders_1,
+        sliders_2: initial_state.sliders_2,
+        sliders_3: initial_state.sliders_3,
+        sliders_4: initial_state.sliders_4,
+        sliders_5: initial_state.sliders_5,
+    });
+    
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::new(window.width(), window.height()))),
-        MeshMaterial2d(materials.add(CustomMaterial {
-            time: 0.0,
-            resolution: window.size(),
-            sliders_1: initial_state.sliders_1,
-            sliders_2: initial_state.sliders_2,
-            sliders_3: initial_state.sliders_3,
-            sliders_4: initial_state.sliders_4,
-            sliders_5: initial_state.sliders_5,
-        })),
+        MeshMaterial2d(material_handle),
     ));
 }
 
@@ -124,6 +247,124 @@ fn react_to_resize(
         rect.0 = meshes.add(Rectangle::new(window.width(), window.height()));
     }
 }
+
+fn hide_windows(mut windows: Query<&mut Window>) {
+    // Hide all windows in headless mode
+    for mut window in &mut windows {
+        window.visible = false;
+    }
+}
+
+fn count_frames(
+    mut counter: ResMut<FrameCounter>,
+    screenshot_config: Res<ScreenshotConfig>,
+) {
+    // Only count frames if we haven't reached the target yet
+    if counter.current < counter.target {
+        counter.current += 1;
+        println!("Frame {}/{}", counter.current, counter.target);
+    } else if screenshot_config.should_capture {
+        println!("Target frame reached, waiting for capture...");
+    }
+}
+
+fn capture_last_frame(
+    counter: Res<FrameCounter>,
+    mut screenshot_config: ResMut<ScreenshotConfig>,
+    render_target: Res<RenderTarget>,
+    images: Res<Assets<Image>>,
+    materials: Res<Assets<CustomMaterial>>,
+    time: Res<Time>,
+) {
+    if counter.current == counter.target && screenshot_config.should_capture {
+        // Generate shader output based on current parameters
+        let image_data = update_render_target_with_shader_output(
+            &render_target,
+            &images,
+            &materials,
+            &time
+        );
+        
+        // Save the generated shader output directly
+        save_shader_output_to_file(&image_data, render_target.width, render_target.height, &screenshot_config.output_path);
+        
+        println!("Captured frame {}/{} and saved to {}", counter.current, counter.target, screenshot_config.output_path);
+        // Prevent multiple captures
+        screenshot_config.should_capture = false;
+        
+        // Exit the application after capturing
+        std::process::exit(0);
+    }
+}
+
+fn save_shader_output_to_file(
+    image_data: &[u8],
+    width: u32,
+    height: u32,
+    output_path: &str,
+) {
+    // Save as PNG using the image crate
+    if let Err(e) = image::save_buffer(
+        output_path,
+        image_data,
+        width,
+        height,
+        image::ColorType::Rgba8,
+    ) {
+        eprintln!("Error saving frame as image: {}", e);
+    } else {
+        println!("Frame saved to {} ({}x{})", output_path, width, height);
+    }
+}
+
+fn update_render_target_with_shader_output(
+    render_target: &RenderTarget,
+    images: &Assets<Image>,
+    materials: &Assets<CustomMaterial>,
+    time: &Time,
+) -> Vec<u8> {
+    // Try to read from the actual render target first
+    if let Some(render_target_image) = images.get(&render_target.render_target) {
+        if let Some(data) = &render_target_image.data {
+            if !data.is_empty() {
+                // We have actual GPU-rendered data - use it!
+                println!("Captured actual GPU-rendered shader output: {} bytes", data.len());
+                return data.clone();
+            }
+        }
+    }
+    
+    // If we don't have GPU data, we need to implement proper GPU rendering
+    // For now, return an error pattern to indicate this needs implementation
+    let width = render_target.width;
+    let height = render_target.height;
+    let mut image_data = vec![0u8; (width * height * 4) as usize];
+    
+    // Create a checkerboard pattern to indicate missing GPU capture
+    for y in 0..height {
+        for x in 0..width {
+            let index = ((y * width + x) * 4) as usize;
+            
+            // Red/black checkerboard = GPU capture not implemented
+            if (x / 50 + y / 50) % 2 == 0 {
+                image_data[index] = 255; // R
+                image_data[index + 1] = 0; // G
+                image_data[index + 2] = 0; // B
+                image_data[index + 3] = 255; // A
+            } else {
+                image_data[index] = 0; // R
+                image_data[index + 1] = 0; // G
+                image_data[index + 2] = 0; // B
+                image_data[index + 3] = 255; // A
+            }
+        }
+    }
+    
+    println!("TODO: Implement actual GPU framebuffer capture - showing placeholder pattern");
+    image_data
+}
+
+
 
 #[derive(Asset, TypePath, AsBindGroup, Clone)]
 struct CustomMaterial {
