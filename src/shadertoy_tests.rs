@@ -1,4 +1,4 @@
-use crate::{convert_to_shadertoy, SliderState};
+use crate::{SliderState, convert_to_shadertoy};
 use bevy::math::Vec4;
 use std::path::PathBuf;
 
@@ -35,7 +35,7 @@ void main() {
     assert!(result.contains("vec2 uv = fragCoord / iResolution.xy;"));
     assert!(result.contains("const vec4 slider1 = vec4(1, 0.5, 0.25, 0)"));
     assert!(result.contains("const vec4 slider2 = vec4(0, 0, 0, 0)"));
-    
+
     // Check that unwanted elements are removed
     assert!(!result.contains("#version 450"));
     assert!(!result.contains("layout(location = 0) in vec2 uv;"));
@@ -75,7 +75,7 @@ void main() {
     // Check that helper functions are preserved
     assert!(result.contains("vec3 hsv2rgb(vec3 c) {"));
     assert!(result.contains("vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);"));
-    
+
     // Check that the function call is preserved in the main function
     assert!(result.contains("vec3 color = hsv2rgb(vec3(uv.x, 1.0, 1.0));"));
 }
@@ -117,9 +117,12 @@ void main() {
     assert!(result.contains("const vec4 slider3 = vec4(0.3, 0.4, 0.5, 0.6)"));
     assert!(result.contains("const vec4 slider4 = vec4(0.4, 0.5, 0.6, 0.7)"));
     assert!(result.contains("const vec4 slider5 = vec4(0.5, 0.6, 0.7, 0.8)"));
-    
+
     // Check that slider usage is preserved
-    assert!(result.contains("fragColor = vec4(slider1.x, slider2.y, slider3.z, slider4.w + slider5.x);"));
+    assert!(
+        result
+            .contains("fragColor = vec4(slider1.x, slider2.y, slider3.z, slider4.w + slider5.x);")
+    );
 }
 
 #[test]
@@ -189,12 +192,14 @@ void main() {
     // Check that the main function is properly converted
     assert!(result.contains("void mainImage(out vec4 fragColor, in vec2 fragCoord) {"));
     assert!(result.contains("vec2 uv = fragCoord / iResolution.xy;"));
-    
+
     // Check that the main function body is preserved (with proper indentation)
     assert!(result.contains("vec2 center = vec2(0.5) - uv;"));
     assert!(result.contains("float dist = length(center);"));
     assert!(result.contains("float angle = atan(center.y, center.x);"));
-    assert!(result.contains("vec3 color = 0.5 + 0.5 * cos(vec3(angle, angle + 2.0, angle + 4.0));"));
+    assert!(
+        result.contains("vec3 color = 0.5 + 0.5 * cos(vec3(angle, angle + 2.0, angle + 4.0));")
+    );
     assert!(result.contains("color *= 1.0 - smoothstep(0.4, 0.5, dist);"));
     assert!(result.contains("fragColor = vec4(color, 1.0);"));
 }
