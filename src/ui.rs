@@ -8,8 +8,7 @@ use bevy::{
     picking::hover::Hovered,
     prelude::*,
     ui_widgets::{
-        Slider, SliderRange, SliderValue, UiWidgetsPlugins,
-        ValueChange, observe,
+        Slider, SliderRange, SliderThumb, SliderValue, UiWidgetsPlugins, ValueChange, observe,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -54,10 +53,12 @@ pub fn read_slider_state_for_dump(shader_path: &Path) -> Option<SliderState> {
             .to_string_lossy()
             .replace(extension.to_string_lossy().as_ref(), "")
     };
-    
+
     // For dump functionality, we want to look in assets/configs directly
-    let config_path = PathBuf::from("assets").join("configs").join(format!("{}{}", shader_name, "json"));
-    
+    let config_path = PathBuf::from("assets")
+        .join("configs")
+        .join(format!("{}{}", shader_name, "json"));
+
     let json_confg = read_to_string(config_path).ok()?;
     let config: SliderState = serde_json::from_str(&json_confg).unwrap();
 
@@ -84,7 +85,11 @@ fn extract_config_path(shader_path: &Path) -> Option<PathBuf> {
     };
     let base_dir = shader_path.parent()?.parent()?;
     let assets = PathBuf::from("assets");
-    let config_path = assets.join(base_dir.join("configs").join(format!("{}{}", shader_name, "json")));
+    let config_path = assets.join(
+        base_dir
+            .join("configs")
+            .join(format!("{}{}", shader_name, "json")),
+    );
     Some(config_path)
 }
 
@@ -196,10 +201,6 @@ fn on_update_slider(
         write_slider_state(&shader_path.0, &slider_state);
     }
 }
-
-
-
-
 
 fn create_slider_block(start: u32, values: Vec4) -> impl Bundle {
     (
