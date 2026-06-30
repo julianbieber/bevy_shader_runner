@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = {version = "0.19", features = ["shader_format_glsl", "file_watcher", "bevy_ui_widgets", "bevy_sprite_render"]}
+bevy = { version = "0.19", features = ["shader_format_glsl", "bevy_ui_widgets", "bevy_sprite_render"] }
 clap = { version = "4.5.53", features = ["derive"] }
 # Set max log levels. This helps avoid unwanted low-severity log spam, which can affect performance.
 log = { version = "0.4", features = [
@@ -13,11 +13,14 @@ log = { version = "0.4", features = [
 ] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.148"
-notify = "6.1.1"
 tracing = { version = "0.1", features = [
     "max_level_debug",
     "release_max_level_warn",
 ] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+bevy = { version = "0.19", features = ["file_watcher"] }
+notify = "6.1.1"
 
 # Idiomatic Bevy code often triggers these lints, and the CI workflow treats them as errors.
 # In some cases they may still signal poor code quality however, so consider commenting out these lines.
