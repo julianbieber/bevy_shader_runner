@@ -8,8 +8,7 @@ use bevy::{
     picking::hover::Hovered,
     prelude::*,
     ui_widgets::{
-        CoreSliderDragState, Slider, SliderRange, SliderThumb, SliderValue, UiWidgetsPlugins,
-        ValueChange, observe,
+        Slider, SliderDragState, SliderRange, SliderThumb, SliderValue, ValueChange, observe,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -112,8 +111,6 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(UiWidgetsPlugins);
-
         app.add_systems(Startup, setup_ui)
             .add_systems(Update, (update_slider_style, show_hide_ui));
     }
@@ -170,7 +167,7 @@ fn on_update_slider(
         .entity(slider_entity)
         .insert(SliderValue(value_change.value));
     let slider = sliders.get(slider_entity).unwrap();
-    if let Some(m) = materials.get_mut(handle.id()) {
+    if let Some(mut m) = materials.get_mut(handle.id()) {
         match slider.0 {
             0 => m.sliders_1.x = value_change.value,
             1 => m.sliders_1.y = value_change.value,
@@ -233,6 +230,7 @@ fn create_slider_block(start: u32, values: Vec4) -> impl Bundle {
         ],
     )
 }
+
 fn update_slider_style(
     sliders: Query<
         (Entity, &SliderValue, &SliderRange),
@@ -241,7 +239,7 @@ fn update_slider_style(
                 Changed<SliderValue>,
                 Changed<SliderRange>,
                 Changed<Hovered>,
-                Changed<CoreSliderDragState>,
+                Changed<SliderDragState>,
             )>,
         ),
     >,
@@ -278,6 +276,7 @@ fn create_slider(index: u32, initial: f32) -> impl Bundle {
         SliderRange::new(0.0, 1.0),
         Slider {
             track_click: bevy::ui_widgets::TrackClick::Snap,
+            orientation: bevy::ui_widgets::SliderOrientation::Horizontal,
         },
         Hovered::default(),
         Children::spawn((

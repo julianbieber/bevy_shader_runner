@@ -5,7 +5,6 @@ mod shadertoy_tests;
 mod ui;
 
 use bevy::{
-    input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
     prelude::*,
     render::render_resource::AsBindGroup,
     sprite_render::{Material2d, Material2dPlugin},
@@ -52,8 +51,6 @@ fn main() -> AppExit {
         .insert_resource(ShaderPath(shader_path.clone()))
         .add_plugins((
             DefaultPlugins,
-            InputDispatchPlugin,
-            TabNavigationPlugin,
             Material2dPlugin::<CustomMaterial>::default(),
             UiPlugin,
             ShaderViewerPlugin,
@@ -108,7 +105,7 @@ fn update_time(
     window: Single<&Window>,
 ) {
     for handle in handles {
-        if let Some(m) = materials.get_mut(handle.id()) {
+        if let Some(mut m) = materials.get_mut(handle.id()) {
             m.time = time.elapsed_secs();
             m.resolution = window.size()
         }
