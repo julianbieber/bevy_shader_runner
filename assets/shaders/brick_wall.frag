@@ -84,6 +84,11 @@ vec2 map(vec3 p) {
     } else if (d==dFront) {
         v = 4.0;
     }
+
+    d =min(d, op.y + 5.0-cnoise(op)*0.2);
+    if (d < 0.01 && v == 0.0) {
+        v = 3.0;
+    }
     return vec2(d,v);
 }
 
@@ -173,10 +178,10 @@ void main() {
     // rd.x *= -1.0;
     rd.z = -1.0;
     rd = normalize(rd);
-    // rd.y -= 0.2;
-    rd = normalize(rd);
+    // rd.y -= 1.0;
+    rd = rd * rot(slider2.x*10.0, slider2.y*10.0, slider2.z*10.0);
 
     vec3 ro = vec3(0.0, 7.0, 10.0);
     fragColor = vec4(march(ro, rd), 1.0);
-    // fragColor = vec4(uv, 0.0, 0.0);
+    // fragColor = vec4(abs(rd), 0.0);
 }
