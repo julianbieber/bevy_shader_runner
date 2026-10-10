@@ -76,14 +76,14 @@ run name:
 	@env \
 	RUSTFLAGS="{{RUSTFLAGS_BASE}}" \
 	RUSTDOCFLAGS="{{RUSTDOCFLAGS_BASE}}" \
-	bevy run -- --shader shaders/{{name}}.frag
+	bevy run -- --shader shaders/{{name}}.wesl
 
-# Create a new glsl shader from the example template
+# Create a new wesl shader from the example template
 new-shader name:
     #!/usr/bin/env bash
     set -euo pipefail
-    src="./assets/shaders/example.frag"
-    dst="./assets/shaders/{{name}}.frag"
+    src="./assets/shaders/example.wesl"
+    dst="./assets/shaders/{{name}}.wesl"
     test -e "$dst" || cp "$src" "$dst"
 
 

@@ -1639,11 +1639,9 @@ dependencies = [
  "bevy",
  "clap",
  "log",
- "naga",
  "notify 6.1.1",
  "serde",
  "serde_json",
- "thiserror 2.0.17",
  "tracing",
 ]
 
@@ -3846,7 +3844,6 @@ dependencies = [
  "naga-types",
  "num-traits",
  "once_cell",
- "pp-rs",
  "rustc-hash 1.1.0",
  "spirv",
  "thiserror 2.0.17",
@@ -4677,15 +4674,6 @@ dependencies = [
  "serde_core",
  "writeable",
  "zerovec",
-]
-
-[[package]]
-name = "pp-rs"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb458bb7f6e250e6eb79d5026badc10a3ebb8f9a15d1fff0f13d17c71f4d6dee"
-dependencies = [
- "unicode-xid",
 ]
 
 [[package]]

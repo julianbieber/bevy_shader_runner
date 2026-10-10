@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 use std::sync::OnceLock;
-mod glsl;
 #[cfg(test)]
 mod shadertoy_tests;
 mod ui;
@@ -52,7 +51,6 @@ fn main() -> AppExit {
         .insert_resource(ShaderPath(shader_path.clone()))
         .add_plugins((
             DefaultPlugins,
-            glsl::GlslShaderPlugin,
             Material2dPlugin::<CustomMaterial>::default(),
             UiPlugin,
             ShaderViewerPlugin,
@@ -145,11 +143,7 @@ struct CustomMaterial {
 
 impl Material2d for CustomMaterial {
     fn vertex_shader() -> bevy::shader::ShaderRef {
-        if FRAGMENT.get().unwrap().ends_with(".frag") {
-            "shaders/default.vert".into()
-        } else {
-            "shaders/default.wgsl".into()
-        }
+        "shaders/default.wgsl".into()
     }
 
     fn fragment_shader() -> bevy::shader::ShaderRef {
