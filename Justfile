@@ -43,7 +43,7 @@ bevy-lints:
 	@env \
 	RUSTFLAGS="{{RUSTFLAGS_BASE}}" \
 	RUSTDOCFLAGS="{{RUSTDOCFLAGS_BASE}}" \
-	bevy_lint --locked --workspace --all-targets --profile ci --all-features
+	bevy_lint --locked --workspace --all-targets --profile ci --all-features --ignore-rust-version
 
 # Install Bevy linter via the Bevy CLI installer, then ensure bevy_lint exists
 bevy-lint-install:

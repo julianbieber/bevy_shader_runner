@@ -88,7 +88,6 @@ jobs:
   bevy-lints:
     name: Bevy lints
     runs-on: ubuntu-latest
-    continue-on-error: true
     timeout-minutes: 20
     steps:
       - name: Checkout repository
@@ -97,7 +96,7 @@ jobs:
       - uses: extractions/setup-just@v3
 
       - name: Install Rust toolchain (plus bevy_lint)
-        uses: TheBevyFlock/bevy_cli/bevy_lint@lint-v0.6.0
+        uses: TheBevyFlock/bevy_cli/bevy_lint@928317c80fac77c01a88ccb2e5c52dbc7c24fce5
         with:
           toolchain: nightly-2026-04-16
           cache: true
@@ -115,7 +114,6 @@ jobs:
         run: just deps
 
       - name: Run Bevy lints
-        continue-on-error: true
         run: just bevy-lints
 
   # Run tests.
