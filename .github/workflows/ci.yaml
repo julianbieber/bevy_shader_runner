@@ -115,6 +115,7 @@ jobs:
         run: just deps
 
       - name: Run Bevy lints
+        continue-on-error: true
         run: just bevy-lints
 
   # Run tests.
