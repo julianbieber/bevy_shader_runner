@@ -45,26 +45,6 @@ pub fn read_slider_state(shader_path: &Path) -> Option<SliderState> {
     Some(config)
 }
 
-pub fn read_slider_state_for_dump(shader_path: &Path) -> Option<SliderState> {
-    let shader_name = {
-        let shader_name = shader_path.file_name()?;
-        let extension = shader_path.extension()?;
-        shader_name
-            .to_string_lossy()
-            .replace(extension.to_string_lossy().as_ref(), "")
-    };
-
-    // For dump functionality, we want to look in assets/configs directly
-    let config_path = PathBuf::from("assets")
-        .join("configs")
-        .join(format!("{}{}", shader_name, "json"));
-
-    let json_confg = read_to_string(config_path).ok()?;
-    let config: SliderState = serde_json::from_str(&json_confg).unwrap();
-
-    Some(config)
-}
-
 fn write_slider_state(shader_path: &Path, config: &SliderState) -> Option<()> {
     let json_confg = serde_json::to_string(config).ok()?;
 
